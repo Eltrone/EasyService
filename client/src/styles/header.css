@@ -1,0 +1,33 @@
+.header {
+    width: 100%;
+  }
+  
+  .header-nav {
+    background-color: #0b3460; /* Couleur de fond bleue, ajustez selon votre palette */
+    padding: 10px 0;
+  }
+  
+  .nav-content {
+    display: flex;
+    justify-content: center; /* Étendre les liens sur toute la largeur */
+    align-items: center;
+    width: 100%; /* Ajoutez du padding sur les côtés pour un meilleur espacement */
+    gap: 10px; /* Espacer les éléments du menu */
+  }
+  
+  .nav-link {
+    color: white;
+    text-decoration: none; /* Supprimer le soulignement */
+    margin-right: 0 20px; /* Espacement uniforme entre les liens */
+  }
+  
+  
+  .nav-link:hover {
+    color: #d4af37; /* Couleur au survol */
+  }
+  
+  .login-link {
+    position: absolute;
+    right: 20px; /* Positionner le lien de connexion à droite */
+  }
+  

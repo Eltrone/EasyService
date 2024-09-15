@@ -1,0 +1,16 @@
+.footer {
+    background-color: #f8f9fa; /* couleur de fond claire, ajustez selon votre design */
+    padding: 10px 0;
+    text-align: center;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px; /* espace entre les éléments */
+}
+
+.footer-rights {
+    margin-top: 10px; /* espace entre les liens et le texte de droits d'auteur */
+}
