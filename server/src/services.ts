@@ -2,6 +2,7 @@ import pool from "./db/config";
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import ProviderService from "./models/ProviderService";
 import GenerateNewAccount from "./utils/generateAccount";
+import { NextFunction, Request, Response } from "express";
 
 interface Provider extends RowDataPacket {
     id: number;
@@ -53,7 +54,7 @@ export const getUsers = async () => {
     return rows;
 };
 
-export const getConfigs = async (): Promise<any> => {
+export const getConfigs = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
     try {
         const countriesQuery = 'SELECT id, name FROM countries';
         const servicesQuery = 'SELECT id, name FROM services';
@@ -71,7 +72,7 @@ export const getConfigs = async (): Promise<any> => {
             product_types: productTypes,
         };
     } catch (error) {
-        throw new Error('Failed to fetch configurations');
+        throw new Error(req.__('Failed to fetch configurations'));
     }
 };
 

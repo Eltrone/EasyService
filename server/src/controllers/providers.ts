@@ -81,7 +81,7 @@ export const fetchUsers = async (req: Request, res: Response, next: NextFunction
 
 export const fetchConfigs = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const users = await getConfigs();
+        const users = await getConfigs(req, res, next);
         res.json(users);
     } catch (err) {
         next(err);
