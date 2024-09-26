@@ -59,7 +59,6 @@ export const getConfigs = async (): Promise<any> => {
         const servicesQuery = 'SELECT id, name FROM services';
         const activitiesQuery = 'SELECT id, name FROM activities';
         const productTypesQuery = 'SELECT id, name FROM product_types';
-
         const [countries] = await pool.query(countriesQuery);
         const [services] = await pool.query(servicesQuery);
         const [activities] = await pool.query(activitiesQuery);
@@ -83,7 +82,6 @@ export const createProvider = async (provider: Omit<Provider, 'id'>): Promise<an
     const email = provider.email ?? "unknown";
     const type = provider.type ?? "normal"
     const newUser = await GenerateNewAccount.create(name, email, type);
-
     const query = `
         INSERT INTO providers (
             user_id, company_name, logo, address, phone_number, email, 
@@ -111,7 +109,6 @@ export const createProvider = async (provider: Omit<Provider, 'id'>): Promise<an
 
     const [result]: any = await pool.execute<ResultSetHeader>(query, values);
     const providerId = result.insertId;
-
     await insertIntoJunctionTable('provider_countries', 'country_id', providerId, provider.countries);
     await insertIntoJunctionTable('provider_services', 'service_id', providerId, provider.services);
     await insertIntoJunctionTable('provider_activities', 'activity_id', providerId, provider.activities);
@@ -131,7 +128,6 @@ const insertIntoJunctionTable = async (tableName: string, entityNameId: string, 
 export const updateProvider = async (providerId: number, provider: Partial<Omit<Provider, 'id'>>): Promise<boolean> => {
     let query = 'UPDATE providers SET';
     const queryParams: any[] = [];
-
     if (provider.company_name) {
         query += ' company_name = ?,';
         queryParams.push(provider.company_name);
@@ -142,7 +138,6 @@ export const updateProvider = async (providerId: number, provider: Partial<Omit<
     queryParams.push(providerId);
 
     const [result] = await pool.execute<ResultSetHeader>(query, queryParams);
-
     if (result.affectedRows > 0) {
         await updateJunctionTable('provider_countries', providerId, provider.countryIds);
         await updateJunctionTable('provider_services', providerId, provider.serviceIds);
