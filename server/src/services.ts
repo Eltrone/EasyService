@@ -71,7 +71,6 @@ export const getConfigs = async (): Promise<any> => {
             product_types: productTypes,
         };
     } catch (error) {
-        console.error('Error fetching configurations:', error);
         throw new Error('Failed to fetch configurations');
     }
 };

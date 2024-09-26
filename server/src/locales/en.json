@@ -1,3 +1,15 @@
 {
-    "welcome": "Welcome to Easy Service"
+    "Please provide username, email, and password": "Please provide username, email, and password",
+    "User already exists with this email": "User already exists with this email",
+    "User registered successfully": "User registered successfully",
+    "Please provide email": "Please provide email",
+    "Please provide password": "Please provide password",
+    "Invalid email or password": "Invalid email or password",
+    "Login successful": "Login successful",
+    "You have accessed a protected route!": "You have accessed a protected route!",
+    "Logged out successfully": "Logged out successfully",
+    "Provider not found": "Provider not found",
+    "Internal server error": "Internal server error",
+    "You are authorized": "You are authorized",
+    "Failed to fetch configurations": "Failed to fetch configurations"
 }

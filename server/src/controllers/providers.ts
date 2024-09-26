@@ -11,27 +11,23 @@ export const fetchProviderById = async (req: Request, res: Response, next: NextF
         const provider = await getProvidersById(providerId);
 
         if (!provider) {
-            return res.status(404).json({ message: 'Provider not found' });
+            return res.status(404).json({ message: req.__('Provider not found') });
         }
 
         let consulted = false;
 
         if (userId) {
             consulted = await RedisClient.hasUserConsultedProvider(userId, providerId);
-
-            // If not consulted yet, mark it as consulted
             if (!consulted) {
                 await RedisClient.setUserConsultedProvider(userId, providerId);
             }
         }
 
-        // Create a response object with conditional fields
         const response: any = {
             ...provider,
             consulted,
         };
 
-        // Hide sensitive information if the user is not logged in
         if (!userId) {
             delete response.email;
             delete response.phone_number;

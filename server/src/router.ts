@@ -29,7 +29,7 @@ router.get(
             ...user,
             providers
         }
-        res.json({ message: 'You are authorized', user: payload });
+        res.json({ message: req.__('You are authorized'), user: payload });
     }
 );
 

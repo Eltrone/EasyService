@@ -1,3 +1,15 @@
 {
-    "welcome": "Bienvenue chez Easy Service"
+    "Please provide username, email, and password": "Veuillez fournir le nom d'utilisateur, l'adresse e-mail et le mot de passe",
+    "User already exists with this email": "Un utilisateur existe déjà avec cet e-mail",
+    "User registered successfully": "Utilisateur enregistré avec succès",
+    "Please provide email": "Veuillez fournir une adresse e-mail",
+    "Please provide password": "Veuillez fournir un mot de passe",
+    "Invalid email or password": "E-mail ou mot de passe invalide",
+    "Login successful": "Connexion réussie",
+    "You have accessed a protected route!": "Vous avez accédé à une route protégée !",
+    "Logged out successfully": "Déconnexion réussie",
+    "Provider not found": "Fournisseur non trouvé",
+    "Internal server error": "Erreur interne du serveur",
+    "You are authorized": "Vous êtes autorisé",
+    "Failed to fetch configurations": "Échec de la récupération des configurations"
 }

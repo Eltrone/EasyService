@@ -14,7 +14,7 @@ export default class AuthController {
         const { username, email, password } = req.body;
 
         if (!username || !email || !password) {
-            res.status(400).json({ message: 'Please provide username, email, and password' });
+            res.status(400).json({ message: req.__("Please provide username, email, and password") });
             return;
         }
 
@@ -26,7 +26,7 @@ export default class AuthController {
 
             const [existingUser] = await connection.query<RowDataPacket[]>('SELECT * FROM users WHERE email = ?', [email]);
             if (existingUser.length) {
-                res.status(400).json({ message: 'User already exists with this email' });
+                res.status(400).json({ message: req.__('User already exists with this email') });
                 return;
             }
 
@@ -48,7 +48,7 @@ export default class AuthController {
             const providers = await Promise.all(providerIds.map(id => getProvidersById(id)));
 
             res.status(201).json({
-                message: 'User registered successfully',
+                message: req.__('User registered successfully'),
                 token,
                 user: {
                     ...payload,
@@ -57,7 +57,7 @@ export default class AuthController {
                 providers
             });
 
-            res.status(201).json({ message: 'User registered successfully' });
+            res.status(201).json({ message: req.__('User registered successfully') });
         } catch (error) {
             await connection.rollback();
             next(error);
@@ -70,12 +70,12 @@ export default class AuthController {
         const { email, password } = req.body;
 
         if (!email) {
-            res.status(400).json({ message: 'Please provide email' });
+            res.status(400).json({ message: req.__('Please provide email') });
             return;
         }
 
         if (!password) {
-            res.status(400).json({ message: 'Please provide password' });
+            res.status(400).json({ message: req.__('Please provide password') });
             return;
         }
 
@@ -84,13 +84,13 @@ export default class AuthController {
             const user = userResult[0];
 
             if (!user) {
-                res.status(400).json({ message: 'Invalid email or password' });
+                res.status(400).json({ message: req.__('Invalid email or password') });
                 return;
             }
 
             const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch) {
-                res.status(400).json({ message: 'Invalid email or password' });
+                res.status(400).json({ message: req.__('Invalid email or password') });
                 return;
             }
 
@@ -103,22 +103,21 @@ export default class AuthController {
             const providers = await Promise.all(providerIds.map(id => getProvidersById(id)));
 
             res.status(200).json({
-                message: 'Login successful', token, user: {
+                message: req.__('Login successful'), token, user: {
                     ...payload,
                     providers
                 }, providers
             });
         } catch (error) {
-            console.error('Error logging in user:', error);
             next(error);
         }
     }
 
     public static async protectedRoute(req: Request, res: Response): Promise<void> {
-        res.status(200).json({ message: 'You have accessed a protected route!', user: req.user });
+        res.status(200).json({ message: req.__('You have accessed a protected route!'), user: req.user });
     }
 
     public static logout(req: Request, res: Response): void {
-        res.status(200).json({ message: 'Logged out successfully' });
+        res.status(200).json({ message: req.__('Logged out successfully') });
     }
 }
