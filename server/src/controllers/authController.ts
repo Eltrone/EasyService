@@ -1,174 +1,124 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/userModel';
-import Subscription from '../models/subscriptionModel';
-import { addMonths, isAfter } from 'date-fns';
+import { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
+import pool from '../db/config';
+import RedisClient from '../models/RedisClient';
+import { getProvidersById } from '../services';
 
-const JWT_SECRET = "your_jwt_secret" as any;  // Define JWT secret (ideally, store securely)
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
-class AuthController {
+export default class AuthController {
 
-	// Handle user login
-	public static login = async (req: Request, res: Response): Promise<void> => {
-		const { email, password } = req.body;  // Extract email and password from request body
+    public static async register(req: Request, res: Response, next: NextFunction): Promise<void> {
+        const { username, email, password } = req.body;
 
-		try {
-			const user: any = await User.findOne({ where: { email } });  // Find user by email
+        if (!username || !email || !password) {
+            res.status(400).json({ message: 'Please provide username, email, and password' });
+            return;
+        }
 
-			if (!user) {
-				res.status(401).json({ message: 'Invalid email' });  // User not found, respond with error
-				return;
-			}
+        const connection = await pool.getConnection();
 
-			if (!user.validPassword(password)) {
-				res.status(401).json({ message: 'Invalid password' });  // Password doesn't match, respond with error
-				return;
-			}
+        try {
 
-			// Check if the user is not an admin
-			if (user.type !== "admin") {
-				// Find subscription details for the user
-				const subscription = await Subscription.findOne({ where: { user_id: user.id } });
+            await connection.beginTransaction();
 
-				if (!subscription) {
-					res.status(401).json({ message: 'Subscription expired' });  // No subscription found, respond with error
-					return;
-				}
+            const [existingUser] = await connection.query<RowDataPacket[]>('SELECT * FROM users WHERE email = ?', [email]);
+            if (existingUser.length) {
+                res.status(400).json({ message: 'User already exists with this email' });
+                return;
+            }
 
-				// Check if subscription has expired
-				if (isAfter(new Date(), subscription.end)) {
-					res.status(401).json({ message: 'Subscription expired' });  // Subscription expired, respond with error
-					return;
-				}
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const [result] = await connection.query<ResultSetHeader>('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)', [username, email, hashedPassword, "admin"]);
 
-				// Generate JWT token with user ID
-				const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '1h' });
-				res.json({ message: 'User signin successfully', token, user: { ...user.toJSON(), expiredAt: subscription.end } });  // Respond with success and token
-				return;
-			}
+            // Fetch the newly created user
+            const [newUserRows] = await connection.query<RowDataPacket[]>('SELECT * FROM users WHERE id = ?', [result.insertId]);
+            const newUser = newUserRows[0];
 
-			// Admin user, generate JWT token
-			const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '1h' });
-			res.json({ message: 'User signin successfully', token, user });  // Respond with success and token
-		} catch (error) {
-			res.status(500).json({ error: 'Internal Server Error' });  // Server error handling
-		}
-	};
+            await connection.commit();
 
-	// Handle user registration
-	public static register = async (req: Request, res: Response): Promise<void> => {
-		const { name, email, password } = req.body;  // Extract name, email, and password from request body
+            const token = jwt.sign({ id: newUser.id, email: newUser.email }, JWT_SECRET, { expiresIn: '1h' });
 
-		try {
-			// Check if the email is already registered
-			const existingUser = await User.findOne({ where: { email } });
-			if (existingUser) {
-				res.status(400).json({ message: 'Email already registered' });  // Email already exists, respond with error
-				return;
-			}
+            const payload = { ...newUser };
+            delete payload.password;
 
-			// Create a new user
-			const newUser: any = await User.create({
-				name,
-				email,
-				password,
-			});
+            const providerIds = await RedisClient.getAllConsultedProviderIds(newUser.id);
+            const providers = await Promise.all(providerIds.map(id => getProvidersById(id)));
 
-			// Create a subscription for the new user
-			const startDate = new Date();
-			const endDate = addMonths(startDate, 1);
-			const subscription = await Subscription.create({
-				user_id: newUser.id,
-				start: startDate,
-				end: endDate,
-			});
+            res.status(201).json({
+                message: 'User registered successfully',
+                token,
+                user: {
+                    ...payload,
+                    providers
+                },
+                providers
+            });
 
-			// Check if the user is not an admin
-			if (newUser.type !== "admin") {
-				// Handle subscription validity
-				if (!subscription) {
-					res.status(401).json({ message: 'Subscription expired' });  // Subscription creation failed, respond with error
-					return;
-				}
+            res.status(201).json({ message: 'User registered successfully' });
+        } catch (error) {
+            await connection.rollback();
+            next(error);
+        } finally {
+            await connection.end();
+        }
+    }
 
-				// Check if subscription has expired
-				if (isAfter(new Date(), subscription.end)) {
-					res.status(401).json({ message: 'Subscription expired' });  // Subscription expired, respond with error
-					return;
-				}
+    public static async login(req: Request, res: Response, next: NextFunction): Promise<void> {
+        const { email, password } = req.body;
 
-				// Generate JWT token with user ID
-				const token = jwt.sign({ id: newUser.id }, JWT_SECRET, { expiresIn: '1h' });
-				res.json({ message: 'User registered successfully', token, user: { ...newUser.toJSON(), expiredAt: subscription.end } });  // Respond with success and token
-				return;
-			}
+        if (!email) {
+            res.status(400).json({ message: 'Please provide email' });
+            return;
+        }
 
-			// Admin user, generate JWT token
-			const token = jwt.sign({ id: newUser.id }, JWT_SECRET, { expiresIn: '1h' });
-			res.json({ message: 'User registered successfully', token, user: newUser });  // Respond with success and token
-			// res.status(201).json({ message: 'User registered successfully', user: newUser });
-		} catch (error) {
-			// Handle registration errors
-			console.error('Error during user registration:', error);
-			res.status(500).json({ error: 'Internal Server Error' });  // Server error handling
-		}
-	};
+        if (!password) {
+            res.status(400).json({ message: 'Please provide password' });
+            return;
+        }
 
-	// Handle user logout
-	public static logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-		try {
-			// Clear session cookie and logout with Passport.js
-			res.clearCookie('connect.sid');  // Clear session cookie
-			req.logout(function (err) {  // Logout from Passport.js
-				res.status(200).send({ message: 'Logout successful' });  // Send logout success response to client
-			});
-		} catch (error) {
-			res.status(500).json({ error: 'Internal Server Error' });  // Server error handling
-		}
-	};
+        try {
+            const [userResult] = await pool.query<RowDataPacket[]>('SELECT * FROM users WHERE email = ?', [email]);
+            const user = userResult[0];
 
-	// Get authenticated user details
-	public static getAuthenticatedUser = async (req: Request, res: Response): Promise<void> => {
-		try {
-			// Check if req.user is defined (user authenticated)
-			if (!req.user) {
-				res.status(401).json({ message: 'Unauthorized' });  // Unauthorized access, respond with error
-				return;
-			}
+            if (!user) {
+                res.status(400).json({ message: 'Invalid email or password' });
+                return;
+            }
 
-			// Find user details by ID
-			const user: any = await User.findByPk((req.user as any)?.id);
-			if (!user) {
-				res.status(404).json({ message: 'User not found' });  // User not found, respond with error
-				return;
-			}
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                res.status(400).json({ message: 'Invalid email or password' });
+                return;
+            }
 
-			// Check if the user is not an admin
-			if (user.type !== "admin") {
-				// Find subscription details for the user
-				const subscription = await Subscription.findOne({ where: { user_id: user.id } });
+            const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
 
-				if (!subscription) {
-					res.status(401).json({ message: 'Subscription expired' });  // Subscription not found, respond with error
-					return;
-				}
+            const payload = user;
+            delete payload.password;
 
-				// Check if subscription has expired
-				if (isAfter(new Date(), subscription.end)) {
-					res.status(401).json({ message: 'Subscription expired' });  // Subscription expired, respond with error
-					return;
-				}
+            const providerIds = await RedisClient.getAllConsultedProviderIds((user as any).id);
+            const providers = await Promise.all(providerIds.map(id => getProvidersById(id)));
 
-				res.json({ ...user.toJSON(), expiredAt: subscription.end });  // Respond with user details and subscription end date
-				return;
-			}
+            res.status(200).json({
+                message: 'Login successful', token, user: {
+                    ...payload,
+                    providers
+                }, providers
+            });
+        } catch (error) {
+            console.error('Error logging in user:', error);
+            next(error);
+        }
+    }
 
-			res.json(user);  // Respond with admin user details
-			
-		} catch (error) {
-			res.status(500).json({ error: 'Internal Server Error' });  // Server error handling
-		}
-	};
+    public static async protectedRoute(req: Request, res: Response): Promise<void> {
+        res.status(200).json({ message: 'You have accessed a protected route!', user: req.user });
+    }
+
+    public static logout(req: Request, res: Response): void {
+        res.status(200).json({ message: 'Logged out successfully' });
+    }
 }
-
-export default AuthController;

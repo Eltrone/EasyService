@@ -1,0 +1,6 @@
+.searchProvider {
+    min-height: calc(100vh - 55px - 78px);
+    background-color: white;
+    margin-top: 50px;
+    margin-bottom: 50px;
+}

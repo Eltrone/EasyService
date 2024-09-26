@@ -1,0 +1,17 @@
+.pageContainer {
+    height: calc(100vh - 55px - 78px);
+}
+
+.card {
+    width: 350px;
+    height: 400px !important;
+    background-color: white;
+    border: none;
+    transition: all 0.5s;
+}
+
+.center {
+    display: flex;
+    justify-content:center;
+    align-items:center;
+}

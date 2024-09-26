@@ -1,0 +1,1 @@
+cd server && npm run build && cd .. && make down && make build && make up

@@ -1,55 +1,57 @@
-import React from 'react'; // Import React library
-import instance from '../utils/axios'; // Import axios instance
-import { useUser } from '../contexts/userAuth'; // Import useUser hook from userAuth context
+import React from 'react';
+import instance from '../utils/axios';
+import { useUser } from '../contexts/userAuth';
+import styles from "./Profile.module.css";
+import classNames from 'classnames';
 
-// Function to format date
 function dateFormat(expiredAt: any) {
-  try {
-    if (!expiredAt) {
-      throw new Error("Error"); // Throw error if expiredAt is falsy
-    }
-    const date = new Date(expiredAt); // Create Date object from expiredAt
-    // Format date using Intl.DateTimeFormat
-    const formattedDate = new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-      timeZone: 'UTC'
-    }).format(date);
-    return formattedDate; // Return formatted date
-  } catch (error) {
-    return null; // Return null if there's an error
-  }
+	try {
+		if (!expiredAt) {
+			throw new Error("Error");
+		}
+		const date = new Date(expiredAt);
+		const formattedDate = new Intl.DateTimeFormat('en-US', {
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+			hour12: false,
+			timeZone: 'UTC'
+		}).format(date);
+		return formattedDate;
+	} catch (error) {
+		return null;
+	}
 }
 
-// Profile component
-function Profile() {
-  const { user } = useUser(); // Access user object from userAuth context
+const Profile: React.FC = () => {
+	const { user } = useUser();
+	function logout() {
+		instance.post("/logout").then(response => {
+			localStorage.removeItem("access_token");
+			window.location.href = '/';
+		});
+	}
 
-  // Function to handle logout
-  function logout() {
-    instance.post("/logout").then(response => { // Send POST request to logout endpoint
-      localStorage.removeItem("access_token"); // Remove access_token from localStorage
-      window.location.reload(); // Reload the window to clear user session
-    });
-  }
-
-  // Render profile information
-  return (
-    <div style={{ textAlign: "center", width: "100%" }}>
-      <h1>Mon profil</h1> {/* Heading */}
-      <p>Page de profil.</p> {/* Description */}
-      <p>FullName: {user?.name}</p> {/* Display user's full name */}
-      <p>E-mail: {user?.email}</p> {/* Display user's email */}
-      <p>Type profile (admin/user): {user?.type}</p> {/* Display user's type (admin/user) */}
-      <p>Expired At: {dateFormat(user?.expiredAt)}</p> {/* Display formatted expiration date */}
-      <a href="javascript:void(0)" onClick={logout}>logout</a> {/* Logout link */}
-    </div>
-  );
+	return (
+		<div className={classNames(styles.pageContainer, styles.center)}>
+			<div className={classNames("card p-4", styles.card)}>
+				<div className=" image d-flex flex-column justify-content-center align-items-center">
+					<img src="./avatar.png" height="100" width="100" />
+					<h3 style={{ whiteSpace: "nowrap", marginTop: 15 }}>{user?.username}</h3>
+					<span className="idd" style={{ whiteSpace: "nowrap" }}>{user?.email}</span>
+					<div className="d-flex flex-row justify-content-center align-items-center gap-2">
+						<span className="idd1">{user?.role}</span>
+						<span><i className="fa fa-copy"></i></span>
+					</div>
+					<div className=" px-2 rounded mt-4 date " style={{ whiteSpace: "nowrap" }}> Since ({dateFormat(user?.created_at)}) </div>
+					<a href="javascript:void(0)" onClick={logout}>logout</a>
+				</div>
+			</div>
+		</div>
+	)
 }
 
-export default Profile; // Export Profile component as default
+export default Profile;

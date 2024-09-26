@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Form, Button } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Alert } from 'react-bootstrap';
 import '../styles/contactPage.css';
+import { useUser } from '../contexts/userAuth';
+import styles from './ContactUs.module.css'
+import axios, { extractErrorMessage } from '../utils/axios';
+import classNames from 'classnames';
 
-const ContactPage: React.FC = () => {
+const ContactPage = () => {
+
+    const { config: configs } = useUser();
+    const [loading, setLoading] = useState(false);
+    const [done, setDone] = useState(false);
+    const [status, setStatus] = React.useState<string | null>(null)
+
     const [formData, setFormData] = useState({
         isServiceProvider: '',
         firstName: '',
@@ -26,20 +36,37 @@ const ContactPage: React.FC = () => {
         });
     };
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        // Logic to handle form data submission goes here
-        console.log(formData);
-        alert('Your request has been successfully submitted!');
+        setLoading(true);
+        try {
+            await axios.post('/contacts', formData);
+            setDone(true);
+        } catch (err) {
+            setStatus(extractErrorMessage(err));
+        }
+        setLoading(false);
     };
 
+    if (done) {
+        return (
+            <main className={classNames(styles.main, styles.center)}>
+                <div className={classNames(styles.cardsuccess)}>
+                    <h3>Thank you for your submission!</h3>
+                    <p>We appreciate your interest in our services. Your contact request has been successfully submitted, and our team will review your information shortly.</p>
+                </div>
+            </main>
+        )
+    }
+
     return (
-        <Container fluid="md">
-            <Row>
+        <main className={styles.contactUs}>
+            <Row className='container mt-3 mb-3 bg-white'>
                 <Col md={8}>
                     <Form onSubmit={handleSubmit}>
                         <Form.Group className="mb-3">
                             <strong><Form.Label>Are you a service provider?</Form.Label></strong>
+                            {status && <Alert variant="danger">{status}</Alert>}
                             <Form.Check
                                 type="radio"
                                 label="Yes"
@@ -112,13 +139,12 @@ const ContactPage: React.FC = () => {
                                 <Form.Group className="mb-3">
                                     <Form.Label>Country *</Form.Label>
                                     <Form.Select name="country" required value={formData.country} onChange={handleChange}>
-                                        <option value="">Select a country</option>
-                                        <option value="France">France</option>
-                                        <option value="United States">United States</option>
-                                        <option value="China">China</option>
-                                        <option value="United Kingdom">United Kingdom</option>
-                                        <option value="Germany">Germany</option>
-                                        {/* Add more country options here */}
+                                        <option value="">None</option>
+                                        {configs?.countries.map((country) => (
+                                            <option key={country.id} value={country.id}>
+                                                {country.name}
+                                            </option>
+                                        ))}
                                     </Form.Select>
                                 </Form.Group>
                             </Col>
@@ -131,18 +157,19 @@ const ContactPage: React.FC = () => {
                                 </Form.Group>
                             </Col>
                         </Row>
-                        <Button variant="primary" type="submit">Contact Us</Button>
+                        <Button variant="primary" disabled={loading} type="submit">{loading ? "loading..." : "Submit"}</Button>
                     </Form>
                 </Col>
-                <Col md={4}>
-                    <div>
+                <Col md={4} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <img width={400} src="./Nous-Contacter.png" />
+                    {/* <div>
                         <h4>Other ways to contact us</h4>
                         <p><strong>Email:</strong> aeoglobalsolutions@gmail.com</p>
                         <p><strong>Phone number:</strong> +33(0)6.18.45.64.16</p>
-                    </div>
+                    </div> */}
                 </Col>
             </Row>
-        </Container>
+        </main>
     );
 };
 

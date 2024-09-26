@@ -90,7 +90,7 @@ const AdminPage = () => {
 
 	// Function to load data from the server
 	async function loadData() {
-		const query = user?.type == "admin" ? `` : `user_id=${user?.id}`;
+		const query = user?.role == "admin" ? `` : `user_id=${user?.id}`;
 		instance.get(`/providers?${query}`).then(response => {
 			setProviders(response.data?.providers || []);
 		}).catch(error => {

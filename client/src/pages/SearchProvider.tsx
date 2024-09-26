@@ -1,37 +1,43 @@
 import React from 'react';
-import axios from '../utils/axios'; // Assurez-vous que ce chemin est correct
+import axios from '../utils/axios';
 import qs from 'qs';
 import styled from 'styled-components';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Button, ButtonGroup } from 'react-bootstrap';
+import { useUser } from '../contexts/userAuth';
+import { Link } from 'react-router-dom';
+import styles from "./SearchProvider.module.css"
+import classNames from 'classnames';
 
-// Define interfaces for your configurations and providers
-interface Config {
-    services: Array<{ name: string }>;
-    types: Array<{ name: string }>;
-    countries: Array<{ name: string }>;
+export interface Pagination<T> {
+	items: T[];
+	page: number;
+	total_pages: number;
+	total_items: number;
 }
 
-interface Provider {
-    id: number;
-    name: string;
-    logo_url: string;
-    address: string;
-    email: string;
-    phone_number: string;
-    presentation: string;
-    activityDomain?: string[];  // Les domaines d'activité
-  serviceProvided?: string[];  // Les services fournis
-  countryLocation?: string[];
+export interface Provider {
+	id: number;
+	company_name: string;
+	logo: string;
+	address: string;
+	email: string;
+	phone_number: string;
+	description: string;
+	countries?: number[];
+	services?: number[];
+	activities?: number[];
+	product_types?: number[];
+	contact_phone_number: string,
+	contact_first_name: string,
+	contact_last_name: string,
+	contact_position: string,
+	contact_email: string,
 }
-
-const Container = styled.div`
-  max-width: 960px;
-  margin: 20px auto;
-`;
 
 const FormRow = styled.div`
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-right: -15px;
   margin-left: -15px;
 `;
@@ -40,15 +46,7 @@ const FormColumn = styled.div`
   padding-right: 15px;
   padding-left: 15px;
   margin-bottom: 1rem;
-  width: 100%;
-
-  @media (min-width: 768px) {
-    width: 50%;
-  }
-
-  @media (min-width: 992px) {
-    width: 25%;
-  }
+  flex: 1; // Adjusted for single-line layout
 `;
 
 const SelectStyled = styled.select`
@@ -64,19 +62,6 @@ const SelectStyled = styled.select`
   border-radius: 0.25rem;
 `;
 
-const ButtonStyled = styled.button`
-  color: #fff;
-  background-color: #007bff;
-  border-color: #007bff;
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  line-height: 1.5;
-  border-radius: 0.25rem;
-  display: block;
-  width: 100%;
-  cursor: pointer;
-`;
-
 const CardStyled = styled.div`
   margin-bottom: 20px;
   border: 1px solid rgba(0,0,0,.125);
@@ -85,6 +70,9 @@ const CardStyled = styled.div`
 
 const CardBody = styled.div`
   padding: 1.25rem;
+  p {
+	margin: 0;
+  }
 `;
 
 const ImgStyled = styled.img`
@@ -96,131 +84,214 @@ const ImgStyled = styled.img`
 `;
 
 function SearchProvider() {
-    const [providers, setProviders] = React.useState<Provider[]>([]);
-    const [configs, setConfigs] = React.useState<Config>({ services: [], types: [], countries: [] });
-    const [currentPage, setCurrentPage] = React.useState(1);
-    const resultsPerPage = 9;
+	const [providers, setProviders] = React.useState<Provider[]>([]);
+	const [currentPage, setCurrentPage] = React.useState(1);
+	const [loading, setLoading] = React.useState(false);
+	const [totalPages, setTotalPages] = React.useState(1);
+	const { config: configs, user } = useUser();
 
-    React.useEffect(() => {
-      fetchConfigs();
-      fetchProviders();
-    }, [currentPage]);
+	React.useEffect(() => {
+		fetchProviders('', currentPage);
+	}, [currentPage]);
 
-    async function fetchConfigs() {
-      try {
-        const response = await axios.get<Config>('/api/configs');
-        setConfigs(response.data);
-      } catch (error) {
-        console.error('Failed to fetch configs:', error);
-      }
-    }
+	async function fetchProviders(queryString = '', currentPage: number | null = null) {
+		try {
+			setLoading(true);
+			const cr = currentPage ? "&page=" + currentPage : "";
+			const userId = user ? "&userId=" + user.id : "";
+			const response = await axios.get<Pagination<Provider>>(`/providers?${queryString}${cr}${userId}`);
+			setProviders(response.data.items || []);
+			setTotalPages(response.data.total_pages);
+		} catch (error) {
+			console.error('Failed to fetch providers:', error);
+		}
+		setLoading(false);
+	}
 
-    async function fetchProviders(queryString = '') {
-      try {
-        const response = await axios.get<{ providers: Provider[] }>(`/api/providers?${queryString}`);
-        const startIndex = (currentPage - 1) * resultsPerPage;
-        const selectedProviders = response.data.providers.slice(startIndex, startIndex + resultsPerPage);
-        setProviders(selectedProviders);
-      } catch (error) {
-        console.error('Failed to fetch providers:', error);
-      }
-    }
+	const onSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
+		try {
+			e.preventDefault();
+			setCurrentPage(1);
 
-    const onSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
-      e.preventDefault();
-      setCurrentPage(1);
-      const formData = new FormData(e.currentTarget);
-      const formDataObject: { [key: string]: FormDataEntryValue } = {};
-      formData.forEach((value, key) => {
-        formDataObject[key] = value;
-      });
-    
-      const queryString = qs.stringify(formDataObject); // Transforme en query string
-      fetchProviders(queryString); // Fetch avec les filtres
-    };    
+			const formData = new FormData(e.currentTarget);
+			const formDataObject: { [key: string]: any } = {};
 
-    const PaginationControls = () => (
-        <div>
-            <button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>Précédent</button>
-            <span>Page {currentPage}</span>
-            <button onClick={() => setCurrentPage(currentPage + 1)}>Suivant</button>
-        </div>
-    );
+			formData.forEach((value, key) => {
+				if (value) {
+					if (!formDataObject[key]) {
+						formDataObject[key] = [];
+					}
+					formDataObject[key].push(value);
+				}
+			});
 
-    return (
-      <Container>
-        <h1 className="text-center">Find a Provider</h1>
-        <form onSubmit={onSubmit}>
-          <FormRow>
-          <FormColumn>
-  <label>Activity Domain</label>
-  <SelectStyled name="activityDomain" defaultValue="">
-    <option value="">None</option>
-    {configs.types.map((option) => (
-      <option key={option.name} value={option.name}>
-        {option.name}
-      </option>
-    ))}
-  </SelectStyled>
-</FormColumn>
+			const queryString = qs.stringify(formDataObject, { arrayFormat: 'brackets', encode: false });
+			await fetchProviders(queryString);
+		} catch (error) {
+			// ignore ...
+		}
+	};
 
-<FormColumn>
-  <label>Services Provided</label>
-  <SelectStyled name="serviceProvided" defaultValue="">
-    <option value="">None</option>
-    {configs.services.map((service) => (
-      <option key={service.name} value={service.name}>
-        {service.name}
-      </option>
-    ))}
-  </SelectStyled>
-</FormColumn>
+	const PaginationControls = () => {
+		const pages = [];
+		const maxPagesToShow = 7;
+		const halfRange = Math.floor((maxPagesToShow - 1) / 2);
 
-<FormColumn>
-  <label>Country Location</label>
-  <SelectStyled name="countryLocation" defaultValue="">
-    <option value="">None</option>
-    {configs.countries.map((country) => (
-      <option key={country.name} value={country.name}>
-        {country.name}
-      </option>
-    ))}
-  </SelectStyled>
-</FormColumn>
+		let startPage = Math.max(1, currentPage - halfRange);
+		let endPage = Math.min(totalPages, currentPage + halfRange);
 
-          </FormRow>
-          <ButtonStyled type="submit">Search</ButtonStyled>
-        </form>
-        <div className="row">
-          {providers.map((provider, index) => (
-            <div className="col-md-4" key={index}>
-              <CardStyled>
-                <ImgStyled src={provider.logo_url || 'https://placehold.co/185x40'} alt={provider.name} />
-                <CardBody>
-  <h5>{provider.name}</h5>
-  <p>{provider.presentation}</p>
-  <p>Email: {provider.email}</p>
-  <p>Phone: {provider.phone_number}</p>
+		if (currentPage <= halfRange) {
+			endPage = Math.min(totalPages, maxPagesToShow);
+		} else if (currentPage + halfRange >= totalPages) {
+			startPage = Math.max(1, totalPages - (maxPagesToShow - 1));
+		}
 
-  {/* Ajouter les informations manquantes */}
-  {provider.activityDomain && (
-    <p>Activity Domains: {provider.activityDomain.join(', ')}</p>
-  )}
-  {provider.serviceProvided && (
-    <p>Services Provided: {provider.serviceProvided.join(', ')}</p>
-  )}
-  {provider.countryLocation && (
-    <p>Country Locations: {provider.countryLocation.join(', ')}</p>
-  )}
-</CardBody>
+		for (let i = startPage; i <= endPage; i++) {
+			pages.push(i);
+		}
 
-              </CardStyled>
-            </div>
-          ))}
-        </div>
-        <PaginationControls />
-      </Container>
-    );
+		return (
+			<ButtonGroup>
+				<Button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+					Previous
+				</Button>
+
+				{startPage > 1 && (
+					<>
+						<Button onClick={() => setCurrentPage(1)}>1</Button>
+						{startPage > 2 && <span className="mx-1">...</span>}
+					</>
+				)}
+
+				{pages.map(page => (
+					<Button
+						key={page}
+						onClick={() => setCurrentPage(page)}
+						variant={page === currentPage ? "primary" : "outline-primary"}
+					>
+						{page}
+					</Button>
+				))}
+
+				{endPage < totalPages && (
+					<>
+						{endPage < totalPages - 1 && <span className="mx-1">...</span>}
+						<Button onClick={() => setCurrentPage(totalPages)}>{totalPages}</Button>
+					</>
+				)}
+
+				<Button onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+					Next
+				</Button>
+			</ButtonGroup>
+		);
+	};
+
+	if (!configs) {
+		return <></>;
+	}
+
+	return (
+		<div className={classNames('container', styles.searchProvider)}>
+			<h1 className="text-center pb-5">Find a Provider.</h1>
+			<form onSubmit={onSubmit} className='mb-3'>
+				<FormRow>
+					<FormColumn>
+						<label>Provider Type</label>
+						<SelectStyled name="product_types" defaultValue="">
+							<option value="">All</option>
+							{configs.product_types.map((type) => (
+								<option key={type.id} value={type.id}>
+									{type.name}
+								</option>
+							))}
+						</SelectStyled>
+					</FormColumn>
+
+					<FormColumn>
+						<label>Activity Domain</label>
+						<SelectStyled name="activities" defaultValue="">
+							<option value="">None</option>
+							{configs.activities.map((option) => (
+								<option key={option.id} value={option.id}>
+									{option.name}
+								</option>
+							))}
+						</SelectStyled>
+					</FormColumn>
+
+					<FormColumn>
+						<label>Services Needed</label>
+						<SelectStyled name="services" defaultValue="">
+							<option value="">None</option>
+							{configs.services.map((service) => (
+								<option key={service.id} value={service.id}>
+									{service.name}
+								</option>
+							))}
+						</SelectStyled>
+					</FormColumn>
+
+					<FormColumn>
+						<label>Company Country</label>
+						<SelectStyled name="countries" defaultValue="">
+							<option value="">None</option>
+							{configs.countries.map((country) => (
+								<option key={country.id} value={country.id}>
+									{country.name}
+								</option>
+							))}
+						</SelectStyled>
+					</FormColumn>
+				</FormRow>
+				<Button type="submit" variant="secondary" disabled={loading}>{loading ? "Loading..." : "Search"}</Button>
+			</form>
+			<div className="row h100vh mt-2">
+				{providers.map((provider, index) => (
+					<div className="col-md-3" key={index}>
+						<CardStyled>
+							<ImgStyled src={provider.logo || 'https://placehold.co/100x100'} alt={provider.company_name} />
+							<CardBody>
+								<strong style={{ color: "blue" }}>{provider.company_name}</strong>
+								<p><small>{provider.description}</small></p>
+								<hr />
+								<p><small><strong>Email:</strong> {provider?.email ?? "***"}</small></p>
+								<p><small><strong>Phone:</strong> {provider?.phone_number ?? "***"}</small></p>
+								{provider.activities && (
+									<p><small><strong>Activity Domains:</strong>
+										<ul>
+											{configs.activities.filter(e => provider.activities?.includes(e.id)).map(e => (
+												<li>{e.name}</li>
+											))}
+										</ul></small>
+									</p>
+								)}
+								{provider.services && (
+									<p><small><strong>Services Provided:</strong>
+										<ul>
+											{configs.services.filter(e => provider.services?.includes(e.id)).map(e => (
+												<li>{e.name}</li>
+											))}
+										</ul></small>
+									</p>
+								)}
+								{provider.countries && (
+									<p><small><strong>Countries:</strong>
+										<ul>
+											{configs.countries.filter(e => provider.countries?.includes(e.id)).map(e => (
+												<li>{e.name}</li>
+											))}
+										</ul></small>
+									</p>
+								)}
+							</CardBody>
+						</CardStyled>
+					</div>
+				))}
+			</div>
+			<PaginationControls />
+		</div>
+	);
 }
 
 export default SearchProvider;

@@ -1,48 +1,72 @@
-const dotenv = require('dotenv');
-dotenv.config();
+import express from 'express';
+import router from './router';
+import { errorHandler } from './errorHandler';
+import cors from 'cors';
+import morgan from 'morgan';
+import i18n from 'i18n';
+import requestIp from 'request-ip';
+import geoip from 'geoip-lite';
+import passport from './passport';
 
-import express, { NextFunction, Request, Response } from 'express';
-import userRoutes from './routes/userRoutes';
-import setupSwagger from '../swagger';
-import appProvider from './providers/sequelizedb';
-import providerRoutes from './routes/providerRoutes';
-import serviceRoutes from './routes/serviceRoutes';
-import configRoutes from './routes/configRoutes';
-
-const cors = require("cors");
-
-// const cors = require('cors');
 const app = express();
-const PORT = 5000;
 
-// Middleware to set Content-Type header to application/json for all responses
-app.use((req: Request, res: Response, next: NextFunction) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
+i18n.configure({
+    locales: ['en', 'fr'],
+    directory: __dirname + '/locales',
+    defaultLocale: 'en',
+    autoReload: true,
+    updateFiles: false,
+});
+
+app.use(requestIp.mw());
+app.use(i18n.init);
+app.use((req, res, next) => {
+    const clientIp = req.clientIp;
+    const geo = geoip.lookup(clientIp as any);
+    if (geo) {
+        const country = geo.country;
+        let lang;
+
+        switch (country) {
+            case 'FR':
+                lang = 'fr';
+                break;
+            default:
+                lang = 'en';
+        }
+
+        i18n.setLocale(req, lang);
+    } else {
+        i18n.setLocale(req, 'en');
+    }
+
     next();
 });
+app.use(passport.initialize());
+app.use(morgan('combined'));
 
-// Middleware to parse JSON bodies
+const origins = [
+    'http://localhost:3000',
+    'http://localhost:7000',
+    'http://localhost:3003',
+    'http://51.38.177.231:3000',
+];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || origins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    optionsSuccessStatus: 200,
+}));
+
 app.use(express.json());
+app.use(router);
+app.use(errorHandler);
 
-// Disabling CORS for all origins (not recommended for production)
-app.use(cors({ origin: '*' }));
-
-// Initialize Swagger
-setupSwagger(app);
-
-// Use the user routes
-app.use('/api', userRoutes);
-app.use('/api', providerRoutes);
-app.use('/api', serviceRoutes);
-app.use('/api', configRoutes);
-
-// Error handling middleware
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Internal Server Error' });
-});
-
-app.use('/api', providerRoutes);
-
-appProvider(app, PORT);
+export default app;
