@@ -43,7 +43,7 @@ export const getProvidersById = async (providerId: string): Promise<Provider | n
 };
 
 export const getProviders = async (filters: any): Promise<PaginatedResult<any>> => {
-    const providerService = new ProviderService(pool); // Inject your DB pool
+    const providerService = new ProviderService(pool);
     const providers = await providerService.getProviders(filters);
     return providers;
 };
@@ -53,7 +53,6 @@ export const getUsers = async () => {
     return rows;
 };
 
-// Get all configurations: countries, services, activities, and product types
 export const getConfigs = async (): Promise<any> => {
     try {
         const countriesQuery = 'SELECT id, name FROM countries';
@@ -78,7 +77,6 @@ export const getConfigs = async (): Promise<any> => {
     }
 };
 
-// Create a new provider
 export const createProvider = async (provider: Omit<Provider, 'id'>): Promise<any> => {
 
     const name = provider.company_name ?? "unknown";
@@ -114,7 +112,6 @@ export const createProvider = async (provider: Omit<Provider, 'id'>): Promise<an
     const [result]: any = await pool.execute<ResultSetHeader>(query, values);
     const providerId = result.insertId;
 
-    // Insert into junction tables
     await insertIntoJunctionTable('provider_countries', 'country_id', providerId, provider.countries);
     await insertIntoJunctionTable('provider_services', 'service_id', providerId, provider.services);
     await insertIntoJunctionTable('provider_activities', 'activity_id', providerId, provider.activities);
@@ -131,7 +128,6 @@ const insertIntoJunctionTable = async (tableName: string, entityNameId: string, 
     }
 };
 
-// Update an existing provider by ID
 export const updateProvider = async (providerId: number, provider: Partial<Omit<Provider, 'id'>>): Promise<boolean> => {
     let query = 'UPDATE providers SET';
     const queryParams: any[] = [];
@@ -141,15 +137,13 @@ export const updateProvider = async (providerId: number, provider: Partial<Omit<
         queryParams.push(provider.company_name);
     }
 
-    // Add other fields in a similar fashion
-    query = query.slice(0, -1); // Remove trailing comma
+    query = query.slice(0, -1);
     query += ' WHERE id = ?';
     queryParams.push(providerId);
 
     const [result] = await pool.execute<ResultSetHeader>(query, queryParams);
 
     if (result.affectedRows > 0) {
-        // Update junction tables
         await updateJunctionTable('provider_countries', providerId, provider.countryIds);
         await updateJunctionTable('provider_services', providerId, provider.serviceIds);
         await updateJunctionTable('provider_activities', providerId, provider.activityIds);

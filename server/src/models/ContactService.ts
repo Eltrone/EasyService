@@ -19,10 +19,9 @@ export default class ContactService {
     private pool: any;
 
     constructor(pool: any) {
-        this.pool = pool; // Assuming pool is your database connection
+        this.pool = pool;
     }
 
-    // Method to add a new contact
     public async createContact(contact: Contact): Promise<number | null> {
 
         const query = `INSERT INTO contacts (isServiceProvider, firstName, lastName, company, postalCode, city, email, phone, country, destinationCountry, destinationPostalCode, destinationCity, message) 

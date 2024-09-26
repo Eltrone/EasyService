@@ -22,7 +22,6 @@ class GenerateNewAccount {
             const hashedPassword = await bcrypt.hash(password, 10);
             const [result] = await connection.query<ResultSetHeader>('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)', [username, email, hashedPassword, type]);
 
-            // Fetch the newly created user
             const [newUserRows] = await connection.query<any[]>('SELECT * FROM users WHERE id = ?', [result.insertId]);
             const newUser = newUserRows[0];
 
@@ -36,7 +35,7 @@ class GenerateNewAccount {
             await connection.rollback();
             throw error;
         } finally {
-            connection.release(); // Use release instead of end
+            connection.release();
         }
     }
 }

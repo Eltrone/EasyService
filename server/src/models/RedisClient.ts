@@ -15,19 +15,16 @@ class RedisClient {
 
     public static setUserConsultedProvider = async (userId: number, providerId: string) => {
         const key = `${USER_PREFIX}${userId}:${CONSULTED_PROVIDERS_PREFIX}${providerId}`;
-        await redisClient.set(key, 'true'); // Store 'true' as a value to mark as consulted
+        await redisClient.set(key, 'true');
     };
 
-    // Method to get all keys starting with USER_PREFIX
     public static getAllConsultedProviderIds = async (userId: number) => {
-        const pattern = `${USER_PREFIX}${userId}:${CONSULTED_PROVIDERS_PREFIX}*`; // Pattern to match all user keys
+        const pattern = `${USER_PREFIX}${userId}:${CONSULTED_PROVIDERS_PREFIX}*`;
         const keys = await redisClient.keys(pattern);
 
-        // Extract provider IDs from the keys
         const providerIds = keys.map(key => {
-            // Extracting the providerId from the key
             const parts = key.split(':');
-            return parts[parts.length - 1]; // Get the last part, which is the providerId
+            return parts[parts.length - 1];
         });
 
         return providerIds;

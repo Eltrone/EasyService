@@ -9,10 +9,9 @@ export default class ProviderService {
     private pool: any;
 
     constructor(pool: any) {
-        this.pool = pool; // Assuming pool is your database connection
+        this.pool = pool;
     }
 
-    // Method to handle pagination
     private getPagination(page: number, limit: number) {
         const currentPage = Math.max(page, 1);
         const perPage = Math.max(limit, 1);
@@ -20,7 +19,6 @@ export default class ProviderService {
         return { currentPage, perPage, offset };
     }
 
-    // Method to add filters to the query with support for arrays (e.g., countries[] or services[])
     private addFilters(query: string, filters: any, queryParams: any[]): string {
         const { company_name, countries, services, activities, product_types, userId } = filters;
 
@@ -57,7 +55,6 @@ export default class ProviderService {
         return query;
     }
 
-    // Helper method to fetch related data (countries, services, activities, product types)
     private async getRelatedData(tableName: string, column: string, providerIds: number[]): Promise<any> {
         if (providerIds.length === 0) return {};
         const [rows]: any = await this.pool.query(
@@ -70,7 +67,6 @@ export default class ProviderService {
         }, {});
     }
 
-    // Method to fetch providers with related data
     public async getProviders(filters: any): Promise<PaginatedResult<any>> {
         const { page = 1, limit = 10, userId } = filters;
         const { currentPage, perPage, offset } = this.getPagination(page, limit);
@@ -79,21 +75,17 @@ export default class ProviderService {
         let baseQuery = `FROM providers WHERE status=1`;
         const queryParams: any[] = [];
 
-        // Add filters to query
         baseQuery = this.addFilters(baseQuery, filters, queryParams);
 
         const select = !user_id ? "id, company_name, logo, address, description, website, created_at, updated_at" : "*";
 
-        // Queries for main data and count
         const query = `SELECT ${select} ${baseQuery} LIMIT ? OFFSET ?`;
         const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
         queryParams.push(perPage, offset);
 
         try {
-            // Fetch total count for pagination
             const [[{ total: totalItems }]] = await this.pool.query(countQuery, queryParams.slice(0, queryParams.length - 2));
 
-            // Fetch providers data
             const [providersResult]: any = await this.pool.query(query, queryParams);
             const providers = Array.isArray(providersResult) ? providersResult : [];
 
@@ -101,10 +93,8 @@ export default class ProviderService {
                 return { items: [], page: currentPage, total_pages: 1, total_items: 0 };
             }
 
-            // Extract provider IDs for fetching related data
             const providerIds = providers.map((provider: any) => provider.id);
 
-            // Fetch related data in parallel
             const [countriesMap, servicesMap, activitiesMap, productTypesMap] = await Promise.all([
                 this.getRelatedData('provider_countries', 'country_id', providerIds),
                 this.getRelatedData('provider_services', 'service_id', providerIds),
@@ -112,7 +102,6 @@ export default class ProviderService {
                 this.getRelatedData('provider_product_types', 'product_type_id', providerIds)
             ]);
 
-            // Combine providers with related data
             const items = providers.map((provider: any) => ({
                 ...provider,
                 countries: countriesMap[provider.id] || [],
