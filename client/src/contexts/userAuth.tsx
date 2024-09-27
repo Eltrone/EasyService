@@ -2,7 +2,7 @@ import React from 'react';
 import Login from '../pages/Login';
 import instance from '../utils/axios';
 
-interface Provider {
+export interface Provider {
     id: number;
     user_id: number;
     company_name: string;
