@@ -20,11 +20,11 @@ export default class ProviderService {
     }
 
     private addFilters(query: string, filters: any, queryParams: any[]): string {
-        const { company_name, countries, services, activities, product_types, userId } = filters;
+        const { company_name, countries, services, activities, product_types, user_id } = filters;
 
-        if (userId) {
+        if (user_id) {
             query += ` AND user_id = ?`;
-            queryParams.push(userId);
+            queryParams.push(user_id);
         }
 
         if (company_name) {

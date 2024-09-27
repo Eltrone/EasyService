@@ -42,7 +42,7 @@ const SignUp: React.FC = () => {
     React.useEffect(() => {
         (async () => {
             try {
-                const response = await axios.get<Pagination<Provider>>(`/providers?userId=${user?.id}`);
+                const response = await axios.get<Pagination<Provider>>(`/providers?user_id=${user?.id}`);
                 const provider = response.data.items[0] ?? null;
                 provider && setCompanyData({
                     type: "provider",

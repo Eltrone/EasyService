@@ -78,7 +78,7 @@ const CardBody = styled.div`
 const ImgStyled = styled.img`
   height: 43px;
   width: 100%;
-  object-fit: cover;
+  object-fit: contain;
   border-top-left-radius: calc(0.25rem - 1px);
   border-top-right-radius: calc(0.25rem - 1px);
 `;
@@ -257,6 +257,10 @@ function SearchProvider() {
 								<hr />
 								<p><small><strong>Email:</strong> {provider?.email ?? "***"}</small></p>
 								<p><small><strong>Phone:</strong> {provider?.phone_number ?? "***"}</small></p>
+								{provider.product_types && (
+									<p><small><strong>Product Type: </strong> {configs.product_types.filter(e => provider.product_types?.includes(e.id)).map(e => e.name).join(',')}</small>
+									</p>
+								)}
 								{provider.activities && (
 									<p><small><strong>Activity Domains:</strong>
 										<ul>

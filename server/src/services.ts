@@ -87,8 +87,8 @@ export const createProvider = async (provider: Omit<Provider, 'id'>): Promise<an
             user_id, company_name, logo, address, phone_number, email, 
             description, website, contact_first_name, contact_last_name, 
             contact_position, contact_phone_number, contact_email, 
-            created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW());
+            created_at, updated_at, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 1);
     `;
 
     const values = [
