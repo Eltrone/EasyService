@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { User, useUser } from '../contexts/userAuth';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faSearch, faAddressBook, faSignInAlt, faUserPlus } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faSearch, faAddressBook, faPerson, faSignInAlt, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 import '../styles/header.css';
 import axios from '../utils/axios';
 
@@ -22,9 +22,9 @@ const LoggedIn = () => {
 			<Link to="/signup" className="signup-link">
 				<FontAwesomeIcon icon={faUserPlus} /> Update your infromation
 			</Link>
-			<a onClick={logout} className="login-link">
-				<FontAwesomeIcon icon={faSignInAlt} /> Log out
-			</a>
+			<Link to="/profile" className="login-link">
+				<FontAwesomeIcon icon={faPerson} /> Profile
+			</Link>
 		</>
 	)
 }

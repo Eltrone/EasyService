@@ -1,5 +1,6 @@
 import axios from "../utils/axios";
 import React, { useState, useEffect } from "react";
+import { Container } from "react-bootstrap";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
 
@@ -21,10 +22,10 @@ interface Provider {
     contact_email: string;
     created_at: string;
     updated_at: string;
-    countries: number[];
-    services: number[];
-    activities: number[];
-    product_types: number[];
+    countries: string;
+    services: string;
+    activities: string;
+    product_types: string;
 }
 
 // Styled Components
@@ -34,11 +35,12 @@ const PageWrapper = styled.div`
     padding: 2rem;
 `;
 
-const Container = styled.div`
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    padding: 2rem;
+const OContainer = styled(Container)`
+    background-color: transparent;
+    // background-color: #fff;
+    // border-radius: 8px;
+    // box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    // padding: 2rem;
 `;
 
 const Title = styled.h3`
@@ -77,7 +79,7 @@ const ErrorMessage = styled.div`
 
 async function fetchProvider(id: number): Promise<Provider | null> {
     try {
-        const response = await axios.get<any>(`/providers/${id}`);
+        const response = await axios.get<any>(`/providers/${id}?userId=1`);
         return response.data;
     } catch (error) {
         console.error("Failed to fetch provider:", error);
@@ -118,9 +120,11 @@ const ProviderPage = () => {
 
     return (
         <PageWrapper>
-            <Container>
+            <OContainer>
                 {provider ? (
                     <>
+                        <img src={provider.logo} alt="logo" />
+                        <hr />
                         <Title>{provider.company_name}</Title>
                         <DetailSection>
                             <div>
@@ -136,9 +140,6 @@ const ProviderPage = () => {
                                 <Label>Address: </Label><Value>{provider.address}</Value>
                             </div>
                             <div>
-                                <Label>Status: </Label><Value>{provider.status}</Value>
-                            </div>
-                            <div>
                                 <Label>Contact Person: </Label><Value>{`${provider.contact_first_name} ${provider.contact_last_name}`}</Value>
                             </div>
                             <div>
@@ -150,32 +151,25 @@ const ProviderPage = () => {
                             <div>
                                 <Label>Contact Email: </Label><Value>{provider.contact_email}</Value>
                             </div>
-                        </DetailSection>
-                        <DetailSection>
-                            {/* <div>
-                                <Label>Countries: </Label><Value>{provider.countries.join(', ')}</Value>
+                            <hr />
+                            <div>
+                                <Label>Countries: </Label><Value>{provider.countries}</Value>
                             </div>
                             <div>
-                                <Label>Services: </Label><Value>{provider.services.join(', ')}</Value>
+                                <Label>Services: </Label><Value>{provider.services}</Value>
                             </div>
                             <div>
-                                <Label>Activities: </Label><Value>{provider.activities.join(', ')}</Value>
+                                <Label>Activities: </Label><Value>{provider.activities}</Value>
                             </div>
                             <div>
-                                <Label>Product Types: </Label><Value>{provider.product_types.join(', ')}</Value>
-                            </div> */}
-                            <div>
-                                <Label>Created At: </Label><Value>{new Date(provider.created_at).toLocaleDateString()}</Value>
-                            </div>
-                            <div>
-                                <Label>Updated At: </Label><Value>{new Date(provider.updated_at).toLocaleDateString()}</Value>
+                                <Label>Product Types: </Label><Value>{provider.product_types}</Value>
                             </div>
                         </DetailSection>
                     </>
                 ) : (
                     <ErrorMessage>No provider data available.</ErrorMessage>
                 )}
-            </Container>
+            </OContainer>
         </PageWrapper>
     );
 };
