@@ -1,9 +1,10 @@
 import React from 'react';
 import instance from '../utils/axios';
-import { User, useUser } from '../contexts/userAuth';
+import { User } from '../contexts/userAuth';
 import styles from "./Profile.module.css";
 import classNames from 'classnames';
 import { Link } from 'react-router-dom';
+import { capitalize } from '@mui/material';
 
 function dateFormat(expiredAt: any) {
 	try {
@@ -60,7 +61,7 @@ const Profile: React.FC = () => {
 					<h3 style={{ whiteSpace: "nowrap", marginTop: 15 }}>{user?.username}</h3>
 					<span className="idd" style={{ whiteSpace: "nowrap" }}>{user?.email}</span>
 					<div className="d-flex flex-row justify-content-center align-items-center gap-2">
-						<span className="idd1">{user?.role}</span>
+						<span className="idd1">- {capitalize(user?.role as string)} -</span>
 						<span><i className="fa fa-copy"></i></span>
 					</div>
 					<div className=" px-2 rounded mt-4 date " style={{ whiteSpace: "nowrap" }}> Since ({dateFormat(user?.created_at)}) </div>
