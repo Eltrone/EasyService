@@ -152,7 +152,7 @@ const ProviderPage = () => {
                             </div>
                         </DetailSection>
                         <DetailSection>
-                            <div>
+                            {/* <div>
                                 <Label>Countries: </Label><Value>{provider.countries.join(', ')}</Value>
                             </div>
                             <div>
@@ -163,7 +163,7 @@ const ProviderPage = () => {
                             </div>
                             <div>
                                 <Label>Product Types: </Label><Value>{provider.product_types.join(', ')}</Value>
-                            </div>
+                            </div> */}
                             <div>
                                 <Label>Created At: </Label><Value>{new Date(provider.created_at).toLocaleDateString()}</Value>
                             </div>

@@ -57,7 +57,7 @@ function App() {
 							</Authenticated>
 						} />
 						<Route path="/search" element={<SearchProvider />} />
-						<Route path='/provider/:id' element={<Provier />} />
+						<Route path='/providers/:id' element={<Provier />} />
 					</Routes>
 				</Layout>
 			</Router>
