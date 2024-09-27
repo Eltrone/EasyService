@@ -18,8 +18,6 @@ const SignUp: React.FC = () => {
     const [found, setFound] = React.useState(false);
     const { user } = useUser();
 
-    const toggle = () => setType(type === "normal" ? "provider" : "normal")
-
     const [companyData, setCompanyData] = useState({
         type: "provider",
         name: '',
@@ -42,18 +40,19 @@ const SignUp: React.FC = () => {
     React.useEffect(() => {
         (async () => {
             try {
-                const response = await axios.get<Pagination<Provider>>(`/providers?user_id=${user?.id}`);
+                user && setType(user?.role as any)
+                const response = await axios.get<Pagination<Provider>>(`/providers?user_id=${user?.id}&userId=1`);
                 const provider = response.data.items[0] ?? null;
                 provider && setCompanyData({
-                    type: "provider",
+                    type: type,
                     name: provider.company_name,
                     logoUrl: provider.logo,
                     presentation: provider.description,
                     address: provider.address,
-                    countryLocation: (configs?.countries || []).filter(e => provider.countries?.includes(e.id)).map(e => e.name).join(', '),
-                    activityDomain: (configs?.activities || []).filter(e => provider.activities?.includes(e.id)).map(e => e.name).join(', '),
-                    providerType: (configs?.product_types || []).filter(e => provider.product_types?.includes(e.id)).map(e => e.name).join(', '),
-                    serviceProvided: (configs?.services || []).filter(e => provider.services?.includes(e.id)).map(e => e.name).join(', '),
+                    countryLocation: (configs?.countries || []).filter(e => provider.countries?.includes(e.id))[0].id.toString(),
+                    activityDomain: (configs?.activities || []).filter(e => provider.activities?.includes(e.id))[0].id.toString(),
+                    providerType: (configs?.product_types || []).filter(e => provider.product_types?.includes(e.id))[0].id.toString(),
+                    serviceProvided: (configs?.services || []).filter(e => provider.services?.includes(e.id))[0].id.toString(),
                     phoneNumber: provider.phone_number,
                     email: provider.email,
                     contactPhoneNumber: provider.contact_phone_number,
@@ -110,7 +109,7 @@ const SignUp: React.FC = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const response = await axios.post<{ original_password: string; }>(`/providers/${user?.id}`, {
+            const response = await axios.put<{ original_password: string; }>(`/providers/${user?.id}`, {
                 user_id: user?.id,
                 type: companyData.type,
                 company_name: companyData.name,
@@ -129,6 +128,7 @@ const SignUp: React.FC = () => {
                 contact_position: companyData.contactPosition,
                 contact_email: companyData.contactEmail
             });
+            setDone(true);
         } catch (err) {
             setStatus(extractErrorMessage(err));
         }
@@ -141,7 +141,7 @@ const SignUp: React.FC = () => {
                 <div className={classNames(classes.cardsuccess)}>
                     <h3>Thank you for your submission!</h3>
                     <p>Your registration request has been successfully sent to our support team. We will review your information and get back to you shortly. If you have any questions in the meantime, feel free to reach out to us!</p>
-                    <p>Please make sure to save your password securely!: <strong style={{ color: "red" }}>{original_password}</strong></p>
+                    {original_password && <p>Please make sure to save your password securely!: <strong style={{ color: "red" }}>{original_password}</strong></p>}
                 </div>
             </main>
         )
@@ -158,178 +158,188 @@ const SignUp: React.FC = () => {
         )
     }
 
-    const has_ability = !(type === "provider");
+    const has_ability = (type === "provider");
+
+    function capitalize(str: string) {
+        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
 
     return (
         <main className={classNames(classes.main)}>
             <Form className='container' style={{ backgroundColor: "white" }} onSubmit={user ? handleUpdate : handleSubmit}>
-                <h3>Company Information</h3>
+                <h3>{capitalize(`${user?.role}`)} Information</h3>
                 <p>Create your provider account effortlessly with our comprehensive registration form. Fill in essential company details, including name, logo, address, and contact information. By completing all required fields, you'll showcase your offerings and enhance communication with potential clients, ensuring your business is positioned for success on our platform.</p>
                 <hr />
-                <Form.Group className="mb-3">
-                    <strong><Form.Label>Are you a service provider?</Form.Label></strong>
-                    {status && <Alert variant="danger">{status}</Alert>}
-                    <Form.Check
-                        type="radio"
-                        label="Yes"
-                        name="type"
-                        value="yes"
-                        checked={type === "normal"}
-                        onChange={toggle}
-                        required
-                    />
-                    <Form.Check
-                        type="radio"
-                        label="No"
-                        name="type"
-                        value="no"
-                        checked={type === "provider"}
-                        onChange={toggle}
-                        required
-                    />
-                </Form.Group>
-                <Row className='mt-2'>
-                    <Col sm={12} md={6}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Name *</Form.Label>
-                            <Form.Control type="text" name="name" value={companyData.name} onChange={handleChange} required />
-                        </Form.Group>
-                    </Col>
-                    {has_ability && (
-                        <Col sm={12} md={6}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Logo URL *</Form.Label>
-                                <Form.Control type="text" name="logoUrl" value={companyData.logoUrl} onChange={handleChange} required />
-                            </Form.Group>
-                        </Col>
-                    )}
-                </Row>
-                <Row>
-                    <Col sm={12}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Presentation *</Form.Label>
-                            <Form.Control as="textarea" rows={3} name="presentation" value={companyData.presentation} onChange={handleChange} required />
-                        </Form.Group>
-                    </Col>
-                </Row>
-                <Row>
-                    <Col sm={12}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Address *</Form.Label>
-                            <Form.Control type="text" name="address" value={companyData.address} onChange={handleChange} required />
-                        </Form.Group>
-                    </Col>
-                </Row>
-                <Row>
-                    <Col sm={12} md={6}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Country Location *</Form.Label>
-                            <Form.Select name="countryLocation" value={companyData.countryLocation} onChange={handleChange} required>
-                                <option value="">None</option>
-                                {configs?.countries.map((country) => (
-                                    <option key={country.id} value={country.id}>
-                                        {country.name}
-                                    </option>
-                                ))}
-                            </Form.Select>
-                        </Form.Group>
-                    </Col>
-                    {has_ability && <Col sm={12} md={6}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Activity Domain *</Form.Label>
-                            <Form.Select name="activityDomain" value={companyData.activityDomain} onChange={handleChange} required>
-                                <option value="">None</option>
-                                {configs?.activities.map((option) => (
-                                    <option key={option.id} value={option.id}>
-                                        {option.name}
-                                    </option>
-                                ))}
-                            </Form.Select>
-                        </Form.Group>
-                    </Col>}
-                </Row>
-                <Row>
-                    {has_ability && <Col sm={12} md={6}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Provider Type *</Form.Label>
-                            <Form.Select name="providerType" value={companyData.providerType} onChange={handleChange} required>
-                                <option value="">All</option>
-                                {configs?.product_types.map((type) => (
-                                    <option key={type.id} value={type.id}>
-                                        {type.name}
-                                    </option>
-                                ))}
-                            </Form.Select>
-                        </Form.Group>
-                    </Col>}
-                    {has_ability && companyData.providerType === '1' && (
-                        <Col sm={12} md={6}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Service Provided *</Form.Label>
-                                <Form.Select name="serviceProvided" value={companyData.serviceProvided} onChange={handleChange} required>
-                                    <option value="">None</option>
-                                    {configs?.services.map((service) => (
-                                        <option key={service.id} value={service.id}>
-                                            {service.name}
-                                        </option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
-                        </Col>
-                    )}
-                </Row>
-                <Row>
-                    <Col sm={12} md={6}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Phone Number *</Form.Label>
-                            <Form.Control type="tel" name="phoneNumber" value={companyData.phoneNumber} onChange={handleChange} required />
-                        </Form.Group>
-                    </Col>
-                    <Col sm={12} md={6}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Email *</Form.Label>
-                            <Form.Control type="email" name="email" value={companyData.email} onChange={handleChange} required />
-                        </Form.Group>
-                    </Col>
-                </Row>
-                <h3>Contact Information</h3>
-                <Row>
-                    <Col sm={12} md={6}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Contact First Name {has_ability ? "*" : "(optional)"}</Form.Label>
-                            <Form.Control type="text" name="contactFirstName" value={companyData.contactFirstName} onChange={handleChange} required />
-                        </Form.Group>
-                    </Col>
-                    <Col sm={12} md={6}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Contact Last Name {has_ability ? "*" : "(optional)"}</Form.Label>
-                            <Form.Control type="text" name="contactLastName" value={companyData.contactLastName} onChange={handleChange} required />
-                        </Form.Group>
-                    </Col>
-                </Row>
-                <Row>
-                    <Col sm={12} md={6}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Contact Position {has_ability ? "*" : "(optional)"}</Form.Label>
-                            <Form.Control type="text" name="contactPosition" value={companyData.contactPosition} onChange={handleChange} required />
-                        </Form.Group>
-                    </Col>
-                    <Col sm={12} md={6}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Contact Phone Number {has_ability ? "*" : "(optional)"}</Form.Label>
-                            <Form.Control type="tel" name="contactPhoneNumber" value={companyData.contactPhoneNumber} onChange={handleChange} required />
-                        </Form.Group>
-                    </Col>
-                </Row>
-                <Row>
-                    <Col sm={12}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Contact Email {has_ability ? "*" : "(optional)"}</Form.Label>
-                            <Form.Control type="email" name="contactEmail" value={companyData.contactEmail} onChange={handleChange} required />
-                        </Form.Group>
-                    </Col>
-                </Row>
-                <Button variant="primary" disabled={loading} type="submit">{user ? "Update Registration" : "Submit Registration"}</Button>
+                {!user && (
+                    <Form.Group className="mb-3">
+                        <strong><Form.Label>Are you a service provider?</Form.Label></strong>
+                        {status && <Alert variant="danger">{status}</Alert>}
+                        <Form.Check
+                            type="radio"
+                            label="Yes"
+                            name="type"
+                            value="normal"
+                            checked={type === "normal"}
+                            onChange={() => setType("normal")}
+                            required
+                        />
+                        <Form.Check
+                            type="radio"
+                            label="No"
+                            name="type"
+                            value="provider"
+                            checked={type === "provider"}
+                            onChange={() => setType("provider")}
+                            required
+                        />
+                    </Form.Group>
+                )}
+                {type && (
+                    <>
+                        <Row className='mt-2'>
+                            <Col sm={12} md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Name *</Form.Label>
+                                    <Form.Control type="text" name="name" value={companyData.name} onChange={handleChange} required />
+                                </Form.Group>
+                            </Col>
+                            {has_ability && (
+                                <Col sm={12} md={6}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Logo URL *</Form.Label>
+                                        <Form.Control type="text" name="logoUrl" value={companyData.logoUrl} onChange={handleChange} required />
+                                    </Form.Group>
+                                </Col>
+                            )}
+                        </Row>
+                        <Row>
+                            <Col sm={12}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Presentation *</Form.Label>
+                                    <Form.Control as="textarea" rows={3} name="presentation" value={companyData.presentation} onChange={handleChange} required />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col sm={12}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Address *</Form.Label>
+                                    <Form.Control type="text" name="address" value={companyData.address} onChange={handleChange} required />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col sm={12} md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Country Location *</Form.Label>
+                                    <Form.Select name="countryLocation" value={companyData.countryLocation} onChange={handleChange} required>
+                                        <option value="">None</option>
+                                        {configs?.countries.map((country) => (
+                                            <option key={country.id} value={country.id}>
+                                                {country.name}
+                                            </option>
+                                        ))}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                            {has_ability && <Col sm={12} md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Activity Domain *</Form.Label>
+                                    <Form.Select name="activityDomain" value={companyData.activityDomain} onChange={handleChange} required>
+                                        <option value="">None</option>
+                                        {configs?.activities.map((option) => (
+                                            <option key={option.id} value={option.id}>
+                                                {option.name}
+                                            </option>
+                                        ))}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>}
+                        </Row>
+                        <Row>
+                            {has_ability && <Col sm={12} md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Provider Type *</Form.Label>
+                                    <Form.Select name="providerType" value={companyData.providerType} onChange={handleChange} required>
+                                        <option value="">All</option>
+                                        {configs?.product_types.map((type) => (
+                                            <option key={type.id} value={type.id}>
+                                                {type.name}
+                                            </option>
+                                        ))}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>}
+                            {has_ability && companyData.providerType === '1' && (
+                                <Col sm={12} md={6}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Service Provided *</Form.Label>
+                                        <Form.Select name="serviceProvided" value={companyData.serviceProvided} onChange={handleChange} required>
+                                            <option value="">None</option>
+                                            {configs?.services.map((service) => (
+                                                <option key={service.id} value={service.id}>
+                                                    {service.name}
+                                                </option>
+                                            ))}
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                            )}
+                        </Row>
+                        <Row>
+                            <Col sm={12} md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Phone Number *</Form.Label>
+                                    <Form.Control type="tel" name="phoneNumber" value={companyData.phoneNumber} onChange={handleChange} required />
+                                </Form.Group>
+                            </Col>
+                            <Col sm={12} md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Email *</Form.Label>
+                                    <Form.Control type="email" name="email" value={companyData.email} onChange={handleChange} required />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <h3>Contact Information</h3>
+                        <Row>
+                            <Col sm={12} md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Contact First Name {has_ability ? "*" : "(optional)"}</Form.Label>
+                                    <Form.Control type="text" name="contactFirstName" value={companyData.contactFirstName} onChange={handleChange} required />
+                                </Form.Group>
+                            </Col>
+                            <Col sm={12} md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Contact Last Name {has_ability ? "*" : "(optional)"}</Form.Label>
+                                    <Form.Control type="text" name="contactLastName" value={companyData.contactLastName} onChange={handleChange} required />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col sm={12} md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Contact Position {has_ability ? "*" : "(optional)"}</Form.Label>
+                                    <Form.Control type="text" name="contactPosition" value={companyData.contactPosition} onChange={handleChange} required />
+                                </Form.Group>
+                            </Col>
+                            <Col sm={12} md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Contact Phone Number {has_ability ? "*" : "(optional)"}</Form.Label>
+                                    <Form.Control type="tel" name="contactPhoneNumber" value={companyData.contactPhoneNumber} onChange={handleChange} required />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col sm={12}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Contact Email {has_ability ? "*" : "(optional)"}</Form.Label>
+                                    <Form.Control type="email" name="contactEmail" value={companyData.contactEmail} onChange={handleChange} required />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Button variant="primary" disabled={loading} type="submit">{user ? "Update Registration" : "Submit Registration"}</Button>
+                    </>
+                )}
             </Form>
         </main>
     );

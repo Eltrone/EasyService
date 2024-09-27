@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Container } from "react-bootstrap";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
+import { useUser } from "../contexts/userAuth";
 
 interface Provider {
     id: number;
@@ -77,9 +78,9 @@ const ErrorMessage = styled.div`
     margin-top: 1.5rem;
 `;
 
-async function fetchProvider(id: number): Promise<Provider | null> {
+async function fetchProvider(id: number, userUid: number): Promise<Provider | null> {
     try {
-        const response = await axios.get<any>(`/providers/${id}?userId=1`);
+        const response = await axios.get<any>(`/providers/${id}?userId=${userUid}`);
         return response.data;
     } catch (error) {
         console.error("Failed to fetch provider:", error);
@@ -92,12 +93,13 @@ const ProviderPage = () => {
     const [provider, setProvider] = useState<Provider | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const { user } = useUser();
 
     useEffect(() => {
         if (id) {
             const fetchData = async () => {
                 setLoading(true);
-                const providerData = await fetchProvider(Number(id));
+                const providerData = await fetchProvider(Number(id), Number(user?.id));
                 if (providerData) {
                     setProvider(providerData);
                     setError(null);

@@ -1,8 +1,9 @@
 import React from 'react';
 import instance from '../utils/axios';
-import { useUser } from '../contexts/userAuth';
+import { User, useUser } from '../contexts/userAuth';
 import styles from "./Profile.module.css";
 import classNames from 'classnames';
+import { Link } from 'react-router-dom';
 
 function dateFormat(expiredAt: any) {
 	try {
@@ -27,7 +28,23 @@ function dateFormat(expiredAt: any) {
 }
 
 const Profile: React.FC = () => {
-	const { user } = useUser();
+	const [user, setUser] = React.useState<User | null>(null)
+
+	const fetchUser = async () => {
+        try {
+            const response = await instance.get("/protected");
+            setUser(response.data?.user);
+        } catch (error) {
+            console.error("Error fetching user:", error);
+        } finally {
+			// ignore ...
+        }
+    };
+
+	React.useEffect(() => {
+		fetchUser();
+	}, []);
+
 	function logout() {
 		instance.post("/logout").then(response => {
 			localStorage.removeItem("access_token");
@@ -49,10 +66,12 @@ const Profile: React.FC = () => {
 					<div className=" px-2 rounded mt-4 date " style={{ whiteSpace: "nowrap" }}> Since ({dateFormat(user?.created_at)}) </div>
 					<a href="javascript:void(0)" onClick={logout}>logout</a>
 					<hr />
-					<strong>activities</strong>
-					<ul>
+					<strong style={{ whiteSpace: "nowrap" }}>Last Consulted Providers</strong>
+					<ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", textAlign: "center" }}>
 						{(user?.providers || []).map((row, index) => (
-							<li key={index}>{row.company_name}</li>
+							<li key={index}>
+								<Link style={{ whiteSpace: "nowrap" }} to={`/providers/${row.id}`}>{row.company_name} ({row.activities})</Link>
+							</li>
 						))}
 					</ul>
 				</div>

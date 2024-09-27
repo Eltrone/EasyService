@@ -19,7 +19,7 @@ class RedisClient {
     };
 
     public static getAllConsultedProviderIds = async (userId: number) => {
-        const pattern = `${USER_PREFIX}${userId}:${CONSULTED_PROVIDERS_PREFIX}*`;
+        const pattern = `${USER_PREFIX}${userId}*`;
         const keys = await redisClient.keys(pattern);
 
         const providerIds = keys.map(key => {

@@ -62,8 +62,9 @@ export const createProviders = async (req: Request, res: Response, next: NextFun
 
 export const updateProviders = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const params = req.query;
-        const providers = await updateProvider((params as any)?.id as any, params);
+        const providerId = req.params.id;  // Get providerId from URL params
+        const params = req.body;
+        const providers = await updateProvider(Number(providerId), params);
         res.json(providers);
     } catch (err) {
         next(err);
