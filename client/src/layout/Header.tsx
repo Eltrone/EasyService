@@ -1,22 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, useUser } from '../contexts/userAuth';
+import { useUser } from '../contexts/userAuth';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHome, faSearch, faAddressBook, faPerson, faSignInAlt, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 import '../styles/header.css';
-import axios from '../utils/axios';
 
-// const loggedIn = (user: User) => <Link to="/profile" className="nav-link">{user?.username} ({user?.role})</Link>;
 const LoggedIn = () => {
-	const { user } = useUser();
-
-	function logout() {
-		axios.post("/logout").then(response => {
-			localStorage.removeItem("access_token");
-			window.location.href = '/';
-		});
-	}
-
 	return (
 		<>
 			<Link to="/signup" className="signup-link">
