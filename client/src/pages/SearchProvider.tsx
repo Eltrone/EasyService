@@ -193,7 +193,7 @@ function SearchProvider() {
 
 	return (
 		<div className={classNames('container', styles.searchProvider)}>
-			<h1 className="text-center pb-5">Find a Provider.</h1>
+			<h1 className="text-center pb-5">Find the Perfect Service Provider for Your Needs.</h1>
 			<form onSubmit={onSubmit} className='mb-3'>
 				<FormRow>
 					<FormColumn>

@@ -12,3 +12,8 @@ cd server && npm run build && cd .. && make clean && make down && make build && 
 ```bash
 docker exec -it mysql_db mysql -uuser -puser_password
 ```
+
+## start docker
+```bash
+docker start mysql_db
+```
