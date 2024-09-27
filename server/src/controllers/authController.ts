@@ -5,12 +5,13 @@ import { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import pool from '../db/config';
 import RedisClient from '../models/RedisClient';
 import { getProvidersById } from '../services';
+import { User } from "../types/User";
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 export default class AuthController {
 
-    public static async register(req: Request, res: Response, next: NextFunction): Promise<void> {
+    public static async register(req: Request<Partial<User>>, res: Response, next: NextFunction): Promise<void> {
         const { username, email, password } = req.body;
 
         if (!username || !email || !password) {
@@ -66,7 +67,7 @@ export default class AuthController {
         }
     }
 
-    public static async login(req: Request, res: Response, next: NextFunction): Promise<void> {
+    public static async login(req: Request<Partial<User>>, res: Response, next: NextFunction): Promise<void> {
         const { email, password } = req.body;
 
         if (!email) {
@@ -113,7 +114,7 @@ export default class AuthController {
         }
     }
 
-    public static async protectedRoute(req: Request, res: Response): Promise<void> {
+    public static async protectedRoute(req: Request<Partial<User>>, res: Response): Promise<void> {
         res.status(200).json({ message: req.__('You have accessed a protected route!'), user: req.user });
     }
 

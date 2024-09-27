@@ -252,7 +252,7 @@ function SearchProvider() {
 						<CardStyled>
 							<ImgStyled src={provider.logo || 'https://placehold.co/100x100'} alt={provider.company_name} />
 							<CardBody>
-								<strong style={{ color: "blue" }}>{provider.company_name}</strong>
+								<Link to={`/providers/${provider.id}`}><strong style={{ color: "blue" }}>{provider.company_name}</strong></Link>
 								<p><small>{provider.description}</small></p>
 								<hr />
 								<p><small><strong>Email:</strong> {provider?.email ?? "***"}</small></p>

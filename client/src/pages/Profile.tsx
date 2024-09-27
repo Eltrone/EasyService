@@ -48,6 +48,13 @@ const Profile: React.FC = () => {
 					</div>
 					<div className=" px-2 rounded mt-4 date " style={{ whiteSpace: "nowrap" }}> Since ({dateFormat(user?.created_at)}) </div>
 					<a href="javascript:void(0)" onClick={logout}>logout</a>
+					<hr />
+					<strong>activities</strong>
+					<ul>
+						{(user?.providers || []).map((row, index) => (
+							<li key={index}>{row.company_name}</li>
+						))}
+					</ul>
 				</div>
 			</div>
 		</div>
