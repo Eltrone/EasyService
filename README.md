@@ -93,7 +93,7 @@ This project enhanced the team's technical and professional skills in full-stack
 ## Installation
 
 1. Clone the repository.
-2. Install dependencies for both front-end and back-end using:
+2. Install dependencies for both front-end and back-end.
 
 ## running
 ```bash
